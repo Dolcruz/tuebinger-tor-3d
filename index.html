@@ -572,7 +572,7 @@ function figureTexture(kind, top, bottom, hair, frame, opt = {}){
     g.lineCap = 'round'; g.lineJoin = 'round';
     const skin = '#e3a980';
     if (kind === 'bike'){
-      g.lineWidth = 6; g.strokeStyle = '#f7e27a';
+      g.lineWidth = 6; g.strokeStyle = '#b5761a';
       for (const cx of [30, 98]){ g.beginPath(); g.arc(cx, 160, 24, 0, 7); g.stroke(); }
       g.strokeStyle = '#d83a3a'; g.lineWidth = 6; g.beginPath(); g.moveTo(30, 160); g.lineTo(62, 158); g.lineTo(52, 118); g.lineTo(30, 160); g.moveTo(62, 158); g.lineTo(90, 116); g.lineTo(52, 118); g.moveTo(90, 116); g.lineTo(98, 160); g.stroke();
       g.strokeStyle = '#2a2140'; g.lineWidth = 5; g.beginPath(); g.moveTo(90, 116); g.lineTo(94, 102); g.lineTo(106, 100); g.stroke();
