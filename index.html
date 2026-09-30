@@ -571,7 +571,6 @@ function figureTexture(kind, top, bottom, hair, frame, opt = {}){
     g.scale(res, res);
     g.lineCap = 'round'; g.lineJoin = 'round';
     const skin = '#e3a980';
-    const walk = frame === 0 ? 1 : -1;
     if (kind === 'bike'){
       g.lineWidth = 6; g.strokeStyle = '#f7e27a';
       for (const cx of [30, 98]){ g.beginPath(); g.arc(cx, 160, 24, 0, 7); g.stroke(); }
@@ -587,27 +586,48 @@ function figureTexture(kind, top, bottom, hair, frame, opt = {}){
       g.fillStyle = hair; g.beginPath(); g.arc(78, 40, 12, Math.PI * 1.05, Math.PI * 1.95); g.fill();
       return;
     }
+    // side view, facing right. frame = 0..7 of one stride cycle; near limbs in front of the torso, far limbs behind and a bit darker
     const kid = kind === 'kid';
-    const s = kid ? 0.66 : 1, ox = 64, base = 186;
-    const hip = [ox, base - 86 * s], sh = [ox + 3, base - 150 * s];
-    g.strokeStyle = bottom; g.lineWidth = 15 * s;
-    g.beginPath(); g.moveTo(...hip); g.lineTo(ox - 20 * walk * s, base - 44 * s); g.lineTo(ox - 30 * walk * s, base - 4); g.stroke();
-    g.beginPath(); g.moveTo(...hip); g.lineTo(ox + 16 * walk * s, base - 44 * s); g.lineTo(ox + 30 * walk * s, base - 6); g.stroke();
-    g.strokeStyle = '#2a2140'; g.lineWidth = 8 * s;
-    g.fillStyle = top; g.beginPath(); g.moveTo(ox - 21 * s, hip[1] + 6); g.lineTo(sh[0] - 17 * s, sh[1]); g.quadraticCurveTo(sh[0], sh[1] - 10 * s, sh[0] + 17 * s, sh[1]); g.lineTo(ox + 21 * s, hip[1] + 6); g.fill();
-    g.strokeStyle = top; g.lineWidth = 11 * s;
-    g.beginPath(); g.moveTo(sh[0] - 10 * s, sh[1] + 8); g.lineTo(ox - 26 * walk * s, sh[1] + 52 * s); g.stroke();
-    g.beginPath(); g.moveTo(sh[0] + 10 * s, sh[1] + 8); g.lineTo(ox + 28 * walk * s, sh[1] + 50 * s); g.stroke();
-    g.fillStyle = skin; g.beginPath(); g.arc(sh[0] + 2, sh[1] - 20 * s, 15 * s, 0, 7); g.fill();
-    g.fillStyle = hair; g.beginPath(); g.arc(sh[0] + 2, sh[1] - 23 * s, 15 * s, Math.PI * 1.02, Math.PI * 1.98); g.fill();
-    if (kid && opt.balloon !== false){ g.strokeStyle = '#2a2140'; g.lineWidth = 2; g.beginPath(); g.moveTo(ox + 28 * walk * s, sh[1] + 50 * s); g.quadraticCurveTo(ox + 40, 30, ox + 34, 22); g.stroke();
-      heartWithLogo(g, ox + 34, 36, 1); }
-    if (opt.bag){                                   // paper bag from the shop, swinging in the front hand
-      const hx = ox + 28 * walk * s, hy = sh[1] + 50 * s;
-      g.strokeStyle = '#8a0a5e'; g.lineWidth = 2.5; g.beginPath(); g.moveTo(hx - 7, hy + 9); g.quadraticCurveTo(hx, hy - 8, hx + 7, hy + 9); g.stroke();
-      g.fillStyle = HF_PINK; g.fillRect(hx - 16, hy + 8, 32, 36);
-      g.fillStyle = 'rgba(0,0,0,.12)'; g.fillRect(hx + 10, hy + 8, 6, 36);
-      if (LOGO.white) g.drawImage(LOGO.white, hx - 11, hy + 13, 22, 22 * 411 / 370);
+    const s = kid ? 0.66 : 1, ox = 60, base = 188;
+    const ph = frame / 8 * Math.PI * 2, sw = Math.cos(ph), up = Math.sin(ph);
+    const D = Math.PI / 180, LT = 44 * s, LS = 42 * s, UA = 30 * s, FA = 28 * s;
+    const limb = (x, y, a1, a2, l1, l2) => { const k = [x + l1 * Math.sin(a1), y + l1 * Math.cos(a1)]; return [k, [k[0] + l2 * Math.sin(a2), k[1] + l2 * Math.cos(a2)]]; };
+    // legs: the leg that swings forward lifts its knee; stance leg stays straight
+    const legs = [[+1, -up], [-1, up]].map(([sg, swing]) => {
+      const thigh = (22 * sw * sg + 14 * Math.max(0, swing)) * D;
+      const shin = thigh - (38 * Math.max(0, swing) + 6 * Math.max(0, -sw * sg)) * D;
+      return { thigh, shin };
+    });
+    const drop = Math.max(...legs.map(l => LT * Math.cos(l.thigh) + LS * Math.cos(l.shin)));
+    const hip = [ox, base - drop], sh = [ox + 4 * s, hip[1] - 64 * s];
+    const strokeLimb = (pts, col, w, far) => {
+      g.lineWidth = w; g.beginPath(); g.moveTo(pts[0][0], pts[0][1]); for (const q of pts.slice(1)) g.lineTo(q[0], q[1]);
+      g.strokeStyle = col; g.stroke(); if (far){ g.strokeStyle = 'rgba(42,33,64,.22)'; g.stroke(); }
+    };
+    const legPts = (l) => { const [k, f] = limb(hip[0], hip[1], l.thigh, l.shin, LT, LS); return [hip, k, f]; };
+    const bagArm = !!opt.bag, balloonArm = kid && opt.balloon !== false;
+    // arms swing opposite to the leg on the same side
+    const armFar = limb(sh[0], sh[1] + 6 * s, 26 * sw * D, (26 * sw + 24) * D, UA, FA);
+    const nearA = bagArm ? 5 * -sw * D : balloonArm ? 150 * D : 26 * -sw * D;
+    const nearB = bagArm ? nearA : balloonArm ? 170 * D : (26 * -sw + 24) * D;
+    const armNear = limb(sh[0], sh[1] + 6 * s, nearA, nearB, UA, FA);
+    strokeLimb([[sh[0], sh[1] + 6 * s], ...armFar], top, 11 * s, true);
+    strokeLimb(legPts(legs[1]), bottom, 15 * s, true);
+    g.fillStyle = top; g.beginPath(); g.moveTo(hip[0] - 20 * s, hip[1] + 6 * s); g.lineTo(sh[0] - 16 * s, sh[1]); g.quadraticCurveTo(sh[0], sh[1] - 10 * s, sh[0] + 16 * s, sh[1]); g.lineTo(hip[0] + 20 * s, hip[1] + 6 * s); g.fill();
+    strokeLimb(legPts(legs[0]), bottom, 15 * s, false);
+    g.fillStyle = skin; g.beginPath(); g.arc(sh[0] + 3 * s, sh[1] - 20 * s, 15 * s, 0, 7); g.fill();
+    g.fillStyle = hair; g.beginPath(); g.arc(sh[0] + 1 * s, sh[1] - 23 * s, 15 * s, Math.PI * 1.02, Math.PI * 1.98); g.fill();
+    strokeLimb([[sh[0], sh[1] + 6 * s], ...armNear], top, 11 * s, false);
+    const hand = armNear[1];
+    g.fillStyle = skin; g.beginPath(); g.arc(hand[0], hand[1], 5 * s, 0, 7); g.fill();
+    if (balloonArm){ g.strokeStyle = '#2a2140'; g.lineWidth = 2; g.beginPath(); g.moveTo(hand[0], hand[1]); g.quadraticCurveTo(hand[0] + 8, 50, ox + 38, 36); g.stroke();
+      heartWithLogo(g, ox + 38, 36, 1); }
+    if (bagArm){                                    // shop bag hanging from the near hand
+      const bw = 36, bh = 40, hx = hand[0], hy = hand[1];
+      g.strokeStyle = '#8a0a5e'; g.lineWidth = 3; g.beginPath(); g.moveTo(hx - 9, hy + 11); g.quadraticCurveTo(hx, hy - 9, hx + 9, hy + 11); g.stroke();
+      g.fillStyle = HF_PINK; g.fillRect(hx - bw / 2, hy + 10, bw, bh);
+      g.fillStyle = 'rgba(0,0,0,.12)'; g.fillRect(hx + bw / 2 - 7, hy + 10, 7, bh);
+      if (LOGO.white){ const lw = 26; g.drawImage(LOGO.white, hx - lw / 2 - 2, hy + 10 + (bh - lw * 411 / 370) / 2, lw, lw * 411 / 370); }
     }
   });
 }
@@ -624,25 +644,42 @@ function dogTexture(frame){
   });
 }
 const walkers = [];
+// paper cut-outs: an upright card standing along the walking line, so the figure always faces where it goes
+// (seen from the other side the card shows its mirrored back, which again faces the right way).
+// When someone walks straight at the camera the card would turn edge-on; it then turns towards the viewer, at most 45 degrees.
+const cardGeo = new THREE.PlaneGeometry(1, 1); cardGeo.translate(0, 0.48, 0);
+function mkCard(tex, w, h){
+  const m = new THREE.MeshBasicMaterial({ map: tex[0], transparent: true, alphaTest: 0.3, opacity: 0, side: THREE.DoubleSide });
+  const c = new THREE.Mesh(cardGeo, m); c.scale.set(w, h, 1); scene.add(c); return c;
+}
+const MAX_TURN = 45 * Math.PI / 180;
+function orientCard(card, x, z, dx, dz){
+  const base = Math.atan2(-dz, dx);                                   // local +x (the figure's front) along the walking direction
+  const cx = camera.position.x - x, cz = camera.position.z - z;
+  let d = Math.atan2(cx, cz) - base;                                  // angle between the card normal and the view direction
+  d = Math.atan2(Math.sin(d), Math.cos(d));
+  if (Math.abs(d) > Math.PI / 2) d = Math.atan2(Math.sin(d - Math.PI), Math.cos(d - Math.PI));   // the back side is the one we see
+  const turn = Math.sign(d) * Math.max(0, Math.abs(d) - (Math.PI / 2 - MAX_TURN));
+  card.rotation.set(0, base + turn, 0);
+}
 function buildPeople(paths){
   // every figure walks or rides a straight line; the lines were checked against the building footprints
   // and lead only through the gate and the two side passages
-  const mk = (tex, w, h) => { const m = new THREE.SpriteMaterial({ map: tex[0], transparent: true, alphaTest: 0.3, opacity: 0 });
-    const sp = new THREE.Sprite(m); sp.center.set(0.5, 0.02); sp.scale.set(w, h, 1); scene.add(sp); return sp; };
   paths.forEach((p, i) => {
     const kind = p.kind === 'dog' ? 'walk' : p.kind;
     const bag = i === BAG_WALKER, res = (kind === 'kid' || bag) ? 2 : 1;
-    const tex = [0, 1].map(fr => figureTexture(kind, p.top, p.bottom, p.hair, fr, { bag, res }));
-    const s = mk(tex, p.h * 128 / 192 * (kind === 'bike' ? 1.55 : 1), p.h * (kind === 'bike' ? 1.1 : 1));
+    const frames = kind === 'bike' ? [0, 1] : [0, 1, 2, 3, 4, 5, 6, 7];
+    const tex = frames.map(fr => figureTexture(kind, p.top, p.bottom, p.hair, fr, { bag, res }));
+    const s = mkCard(tex, p.h * 128 / 192 * (kind === 'bike' ? 1.55 : 1), p.h * (kind === 'bike' ? 1.1 : 1));
     const A = new THREE.Vector2(p.a[0], p.a[1]), B = new THREE.Vector2(p.b[0], p.b[1]);
-    const w = { s, tex, A, B, L: A.distanceTo(B), kind, speed: p.speed, t: hash(i + 1) * A.distanceTo(B), dir: 1, wait: 0 };
-    if (p.kind === 'dog'){ w.dogTex = [dogTexture(0), dogTexture(1)]; w.dog = mk(w.dogTex, 0.95, 0.6); }
-    if (kind === 'kid'){ w.texNo = [0, 1].map(fr => figureTexture(kind, p.top, p.bottom, p.hair, fr, { balloon: false, res })); w.hasBalloon = true; w.h = p.h; }
+    const w = { s, tex, A, B, L: A.distanceTo(B), kind, speed: p.speed, t: hash(i + 1) * A.distanceTo(B), dir: 1, wait: 0,
+                stride: kind === 'kid' ? 0.95 : 1.3 };
+    if (p.kind === 'dog'){ w.dogTex = [dogTexture(0), dogTexture(1)]; w.dog = mkCard(w.dogTex, 0.95, 0.6); }
+    if (kind === 'kid'){ w.texNo = frames.map(fr => figureTexture(kind, p.top, p.bottom, p.hair, fr, { balloon: false, res })); w.hasBalloon = true; w.h = p.h; }
     walkers.push(w);
   });
 }
 function updatePeople(dt, time){
-  const v = new THREE.Vector3(), v2 = new THREE.Vector3();
   for (const w of walkers){
     if (w.wait > 0){ w.wait -= dt; w.s.material.opacity = 0; if (w.dog) w.dog.material.opacity = 0; continue; }
     w.t += w.speed * dt;
@@ -651,21 +688,23 @@ function updatePeople(dt, time){
     const from = w.dir > 0 ? w.A : w.B, to = w.dir > 0 ? w.B : w.A;
     const x = w.A.x + (w.B.x - w.A.x) * f, z = w.A.y + (w.B.y - w.A.y) * f;
     const fade = Math.min(1, w.t / 2.5, (w.L - w.t) / 2.5);
-    const bob = w.kind === 'bike' ? 0 : Math.abs(Math.sin(time * 6 * w.speed)) * 0.06;
-    w.s.position.set(x, groundY(x, z) + bob, z);
+    w.s.position.set(x, groundY(x, z), z);
     w.s.material.opacity = fade;
-    w.s.material.map = (w.texNo && !w.hasBalloon ? w.texNo : w.tex)[Math.floor(time * (w.kind === 'bike' ? 3 : 4) * w.speed) % 2];
+    const set = w.texNo && !w.hasBalloon ? w.texNo : w.tex;
+    // frames follow the distance walked, so feet do not slide
+    const fr = w.kind === 'bike' ? Math.floor(time * 3 * w.speed) % 2 : Math.floor(w.t / w.stride * 8) % 8;
+    w.s.material.map = set[fr];
     const dx = to.x - from.x, dz = to.y - from.y, len = Math.hypot(dx, dz);
-    const sd = v.set(x + dx / len, 0, z + dz / len).project(camera).x - v2.set(x, 0, z).project(camera).x;
-    w.s.scale.x = Math.abs(w.s.scale.x) * (sd >= 0 ? 1 : -1);
+    orientCard(w.s, x, z, dx, dz);
     if (w.texNo && w.hasBalloon && entered && time - enteredAt > 4 && time - lastRelease > 45 && w.t / w.L > 0.4 && w.t / w.L < 0.6 && fade > 0.99){
-      w.hasBalloon = false; lastRelease = time; releaseBalloon(w, x, z, sd >= 0 ? 1 : -1);
+      w.hasBalloon = false; lastRelease = time;
+      releaseBalloon(w, x, z, new THREE.Vector3(1, 0, 0).applyEuler(w.s.rotation));
     }
     if (w.dog){
       const dxp = x + dx / len * 1.3, dzp = z + dz / len * 1.3;
       w.dog.position.set(dxp, groundY(dxp, dzp), dzp); w.dog.material.opacity = fade;
-      w.dog.material.map = w.dogTex[Math.floor(time * 6) % 2];
-      w.dog.scale.x = Math.abs(w.dog.scale.x) * (sd >= 0 ? 1 : -1);
+      w.dog.material.map = w.dogTex[Math.floor(w.t / 0.45) % 2];
+      orientCard(w.dog, dxp, dzp, dx, dz);
     }
   }
 }
@@ -724,7 +763,7 @@ function heartWithLogo(g, cx, by, k){
 // ---- the kid's heart balloon slips away and floats up over the town
 const runaways = [];
 let runawayTex = null;
-function releaseBalloon(w, x, z, flip){
+function releaseBalloon(w, x, z, fwd){
   if (!runawayTex) runawayTex = canvasTex(256, 512, (g) => {
     g.strokeStyle = '#2a2140'; g.lineWidth = 3; g.lineCap = 'round';
     g.beginPath(); g.moveTo(128, 168); g.bezierCurveTo(110, 260, 150, 360, 124, 506); g.stroke();
@@ -733,8 +772,7 @@ function releaseBalloon(w, x, z, flip){
   const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: runawayTex, transparent: true, depthWrite: false }));
   sp.center.set(0.5, 0); sp.scale.set(0.8, 1.6, 1);
   // start exactly where the balloon was drawn on the kid: 0.34 m sideways (screen space), heart tip 1.5 m up
-  const right = new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld, 0).setY(0).normalize();
-  const p0 = new THREE.Vector3(x, groundY(x, z), z).addScaledVector(right, 0.34 * flip);
+  const p0 = new THREE.Vector3(x, groundY(x, z), z).addScaledVector(fwd, 0.34);
   p0.y += (1 - 36 / 192 - 0.02) * w.h - (1 - 170 / 512) * 1.6;
   sp.position.copy(p0); scene.add(sp);
   runaways.push({ sp, p0, age: 0, seed: Math.random() * 6 });
@@ -995,6 +1033,7 @@ window.__hab = a => { hab.t = a; };
 window.__plane = (sv, dir, lane) => Object.assign(plane, { s: sv, dir, lane, wait: 0 });
 window.__release = () => { const w = walkers.find(w => w.texNo); lastRelease = -1e9; w.t = w.L * 0.5; };
 window.__walk = (i, f, dir = 1) => { const w = walkers[i]; w.t = w.L * f; w.wait = 0; w.dir = dir; };
+window.__frames = (i, no) => { const w = walkers[i]; const set = no ? w.texNo : w.tex; const c = document.createElement('canvas'); const iw = set[0].image.width, ih = set[0].image.height; c.width = iw * set.length; c.height = ih; const g = c.getContext('2d'); g.fillStyle = '#ddd'; g.fillRect(0, 0, c.width, c.height); set.forEach((t, k) => g.drawImage(t.image, k * iw, 0)); return c.toDataURL(); };
 window.__pose = (d, h) => { const t = new THREE.Vector3(TOWER.x, 14, TOWER.z); const eye = t.clone().addScaledVector(FRONT, d); eye.y = h; camera.position.copy(eye); controls.target.copy(t); fly = null; };
 </script>
 </body>
