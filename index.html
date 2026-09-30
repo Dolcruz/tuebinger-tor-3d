@@ -579,6 +579,8 @@ function figureTexture(kind, top, bottom, hair, frame, opt = {}){
       g.strokeStyle = bottom; g.lineWidth = 11;
       g.beginPath(); g.moveTo(52, 110); g.lineTo(frame ? 76 : 70, frame ? 130 : 138); g.lineTo(frame ? 68 : 58, frame ? 168 : 160); g.stroke();
       g.beginPath(); g.moveTo(52, 110); g.lineTo(frame ? 62 : 70, frame ? 140 : 128); g.lineTo(frame ? 56 : 70, frame ? 150 : 166); g.stroke();
+      g.strokeStyle = '#7a3d1c'; g.lineWidth = 8;
+      for (const [fx, fy] of [[frame ? 68 : 58, frame ? 168 : 160], [frame ? 56 : 70, frame ? 150 : 166]]){ g.beginPath(); g.moveTo(fx - 3, fy); g.lineTo(fx + 10, fy + 1); g.stroke(); }
       g.fillStyle = top; g.beginPath(); g.moveTo(44, 112); g.lineTo(62, 60); g.quadraticCurveTo(74, 54, 82, 66); g.lineTo(62, 116); g.fill();
       g.strokeStyle = top; g.lineWidth = 9; g.beginPath(); g.moveTo(74, 68); g.lineTo(100, 100); g.stroke();
       g.strokeStyle = hair; g.lineWidth = 7; g.beginPath(); g.moveTo(74, 42); g.quadraticCurveTo(52, 38, 40, frame ? 50 : 46); g.stroke();
@@ -605,6 +607,8 @@ function figureTexture(kind, top, bottom, hair, frame, opt = {}){
       g.strokeStyle = col; g.stroke(); if (far){ g.strokeStyle = 'rgba(42,33,64,.22)'; g.stroke(); }
     };
     const legPts = (l) => { const [k, f] = limb(hip[0], hip[1], l.thigh, l.shin, LT, LS); return [hip, k, f]; };
+    const shoe = (l, far) => { const f = legPts(l)[2]; g.lineCap = 'round'; g.lineWidth = 8 * s; g.strokeStyle = '#7a3d1c'; g.beginPath(); g.moveTo(f[0] - 3 * s, f[1]); g.lineTo(f[0] + 11 * s, f[1] + 1); g.stroke();
+      if (far){ g.strokeStyle = 'rgba(42,33,64,.22)'; g.stroke(); } };
     const bagArm = !!opt.bag, balloonArm = kid && opt.balloon !== false;
     // arms swing opposite to the leg on the same side
     const armFar = limb(sh[0], sh[1] + 6 * s, 26 * sw * D, (26 * sw + 24) * D, UA, FA);
@@ -612,9 +616,9 @@ function figureTexture(kind, top, bottom, hair, frame, opt = {}){
     const nearB = bagArm ? nearA : balloonArm ? 170 * D : (26 * -sw + 24) * D;
     const armNear = limb(sh[0], sh[1] + 6 * s, nearA, nearB, UA, FA);
     strokeLimb([[sh[0], sh[1] + 6 * s], ...armFar], top, 11 * s, true);
-    strokeLimb(legPts(legs[1]), bottom, 15 * s, true);
+    strokeLimb(legPts(legs[1]), bottom, 15 * s, true); shoe(legs[1], true);
     g.fillStyle = top; g.beginPath(); g.moveTo(hip[0] - 20 * s, hip[1] + 6 * s); g.lineTo(sh[0] - 16 * s, sh[1]); g.quadraticCurveTo(sh[0], sh[1] - 10 * s, sh[0] + 16 * s, sh[1]); g.lineTo(hip[0] + 20 * s, hip[1] + 6 * s); g.fill();
-    strokeLimb(legPts(legs[0]), bottom, 15 * s, false);
+    strokeLimb(legPts(legs[0]), bottom, 15 * s, false); shoe(legs[0], false);
     g.fillStyle = skin; g.beginPath(); g.arc(sh[0] + 3 * s, sh[1] - 20 * s, 15 * s, 0, 7); g.fill();
     g.fillStyle = hair; g.beginPath(); g.arc(sh[0] + 1 * s, sh[1] - 23 * s, 15 * s, Math.PI * 1.02, Math.PI * 1.98); g.fill();
     strokeLimb([[sh[0], sh[1] + 6 * s], ...armNear], top, 11 * s, false);
