@@ -32,7 +32,7 @@ header p{margin:.15em auto 0;width:fit-content;font-size:clamp(15px,3.6vw,19px);
 #hint{display:inline-block;margin-top:0;max-width:calc(100% - 32px);text-align:center;font-size:clamp(14px,3.4vw,17px);letter-spacing:.05em;color:var(--ink);
   padding:.8em 1.6em .45em;transition:opacity .6s}
 nav{position:fixed;left:0;right:0;bottom:0;z-index:6;display:flex;flex-wrap:wrap;justify-content:center;gap:2px 4px;
-  padding:0 16px calc(env(safe-area-inset-bottom,0px) + 12px)}
+  padding:0 16px calc(env(safe-area-inset-bottom,0px) + 16px)}
 nav button,#info button{font:inherit;font-size:clamp(16px,4.2vw,20px);letter-spacing:.1em;text-transform:uppercase;color:var(--blue);border:0;cursor:pointer;
   background:var(--cloud) center/100% 100% no-repeat;padding:.95em 1.15em .45em;filter:drop-shadow(0 3px 0 rgba(42,33,64,.18));transition:transform .15s}
 nav button:hover{transform:translateY(-2px)}
@@ -45,6 +45,8 @@ nav button:focus-visible,#info button:focus-visible{outline:3px dashed var(--blu
 #info p{margin:.45em 0}
 #info .small{font-size:15px;opacity:.75}
 #info a{color:var(--blue)}
+#credit{position:fixed;right:8px;bottom:calc(env(safe-area-inset-bottom,0px) + 2px);z-index:6;font-size:10px;letter-spacing:.03em;opacity:.5;color:var(--ink)}
+#credit a{color:inherit;text-decoration:none}
 #info button{margin-top:.4em;background-image:var(--cloud-on)}
 #intro{position:fixed;inset:0;z-index:9;display:grid;place-items:center;background:var(--pink);transition:opacity 1.1s ease;cursor:pointer}
 #intro .card{width:min(72vw,52vh);aspect-ratio:105/148;background:center/cover url(card.jpg);border-radius:6px;
@@ -57,10 +59,9 @@ nav button:focus-visible,#info button:focus-visible{outline:3px dashed var(--blu
 </style>
 </head>
 <body>
-
 <canvas id="scene" tabindex="0" aria-label="3D-Ansicht des Tübinger Tors in Reutlingen"></canvas>
 <div id="grain"></div>
-<header><h1>GRÜSSLE VOM TÜBINGER TOR</h1><p class="cloud">REUTLINGEN · 36 M · SEIT 1235</p><div id="hint" class="cloud">Ziehen zum Umschauen · zwei Finger zum Zoomen</div></header>
+<header><h1>GRÜßLE VOM TÜBINGER TOR</h1><p class="cloud">REUTLINGEN · 36 M · SEIT 1235</p><div id="hint" class="cloud">Ziehen zum Umschauen · zwei Finger zum Zoomen</div></header>
 <nav>
   <button id="bCard" type="button">Postkarte</button>
   <button id="bTour" type="button" aria-pressed="false">Rundflug</button>
@@ -68,11 +69,10 @@ nav button:focus-visible,#info button:focus-visible{outline:3px dashed var(--blu
   <button id="bWinter" type="button" aria-pressed="false">Winter</button>
   <button id="bInfo" type="button">Info</button>
 </nav>
+<div id="credit">3D-Daten © <a href="https://www.lgl-bw.de" target="_blank" rel="noopener">LGL-BW</a>, dl-de/by-2-0</div>
 <div id="info" hidden>
   <h2>Tübinger Tor</h2>
   <p>Eines der zwei erhaltenen Stadttore Reutlingens. Der steinerne Turm entstand um 1235, der Fachwerkaufsatz kam 1330 dazu. Mit Wetterfahne misst er 36 Meter.</p>
-  <p>Alles um den Turm herum ist echt: Gebäude, Gelände und Bäume stammen aus den offenen 3D-Daten des Landes, nur gemalt statt fotografiert.</p>
-  <p class="small">Geodaten: © LGL Baden-Württemberg, <a href="https://www.lgl-bw.de" target="_blank" rel="noopener">www.lgl-bw.de</a>, Datenlizenz Deutschland Namensnennung 2.0 (3D-Gebäudemodell LoD2, DGM1, nDOM1, DOP20). Turm als Illustration nachgebaut.</p>
   <button id="bClose" type="button">Schließen</button>
 </div>
 <div id="intro" role="button" tabindex="0" aria-label="Postkarte antippen, um die 3D-Ansicht zu öffnen">
@@ -565,8 +565,10 @@ function buildClouds(){
 }
 
 // ---------------------------------------------------------------- people: paper cut-out figures that walk and ride
-function figureTexture(kind, top, bottom, hair, frame){
-  return canvasTex(128, 192, (g, w, h) => {
+function figureTexture(kind, top, bottom, hair, frame, opt = {}){
+  const res = opt.res || 1;
+  return canvasTex(128 * res, 192 * res, (g, w, h) => {
+    g.scale(res, res);
     g.lineCap = 'round'; g.lineJoin = 'round';
     const skin = '#e3a980';
     const walk = frame === 0 ? 1 : -1;
@@ -598,8 +600,15 @@ function figureTexture(kind, top, bottom, hair, frame){
     g.beginPath(); g.moveTo(sh[0] + 10 * s, sh[1] + 8); g.lineTo(ox + 28 * walk * s, sh[1] + 50 * s); g.stroke();
     g.fillStyle = skin; g.beginPath(); g.arc(sh[0] + 2, sh[1] - 20 * s, 15 * s, 0, 7); g.fill();
     g.fillStyle = hair; g.beginPath(); g.arc(sh[0] + 2, sh[1] - 23 * s, 15 * s, Math.PI * 1.02, Math.PI * 1.98); g.fill();
-    if (kid){ g.strokeStyle = '#2a2140'; g.lineWidth = 2; g.beginPath(); g.moveTo(ox + 28 * walk * s, sh[1] + 50 * s); g.quadraticCurveTo(ox + 40, 30, ox + 34, 22); g.stroke();
-      g.fillStyle = '#e8455f'; g.beginPath(); g.moveTo(ox + 34, 36); g.bezierCurveTo(ox + 4, 16, ox + 12, -6, ox + 34, 8); g.bezierCurveTo(ox + 56, -6, ox + 64, 16, ox + 34, 36); g.fill(); }
+    if (kid && opt.balloon !== false){ g.strokeStyle = '#2a2140'; g.lineWidth = 2; g.beginPath(); g.moveTo(ox + 28 * walk * s, sh[1] + 50 * s); g.quadraticCurveTo(ox + 40, 30, ox + 34, 22); g.stroke();
+      heartWithLogo(g, ox + 34, 36, 1); }
+    if (opt.bag){                                   // paper bag from the shop, swinging in the front hand
+      const hx = ox + 28 * walk * s, hy = sh[1] + 50 * s;
+      g.strokeStyle = '#8a0a5e'; g.lineWidth = 2.5; g.beginPath(); g.moveTo(hx - 7, hy + 9); g.quadraticCurveTo(hx, hy - 8, hx + 7, hy + 9); g.stroke();
+      g.fillStyle = HF_PINK; g.fillRect(hx - 16, hy + 8, 32, 36);
+      g.fillStyle = 'rgba(0,0,0,.12)'; g.fillRect(hx + 10, hy + 8, 6, 36);
+      if (LOGO.white) g.drawImage(LOGO.white, hx - 11, hy + 13, 22, 22 * 411 / 370);
+    }
   });
 }
 function dogTexture(frame){
@@ -622,11 +631,13 @@ function buildPeople(paths){
     const sp = new THREE.Sprite(m); sp.center.set(0.5, 0.02); sp.scale.set(w, h, 1); scene.add(sp); return sp; };
   paths.forEach((p, i) => {
     const kind = p.kind === 'dog' ? 'walk' : p.kind;
-    const tex = [0, 1].map(fr => figureTexture(kind, p.top, p.bottom, p.hair, fr));
+    const bag = i === BAG_WALKER, res = (kind === 'kid' || bag) ? 2 : 1;
+    const tex = [0, 1].map(fr => figureTexture(kind, p.top, p.bottom, p.hair, fr, { bag, res }));
     const s = mk(tex, p.h * 128 / 192 * (kind === 'bike' ? 1.55 : 1), p.h * (kind === 'bike' ? 1.1 : 1));
     const A = new THREE.Vector2(p.a[0], p.a[1]), B = new THREE.Vector2(p.b[0], p.b[1]);
     const w = { s, tex, A, B, L: A.distanceTo(B), kind, speed: p.speed, t: hash(i + 1) * A.distanceTo(B), dir: 1, wait: 0 };
     if (p.kind === 'dog'){ w.dogTex = [dogTexture(0), dogTexture(1)]; w.dog = mk(w.dogTex, 0.95, 0.6); }
+    if (kind === 'kid'){ w.texNo = [0, 1].map(fr => figureTexture(kind, p.top, p.bottom, p.hair, fr, { balloon: false, res })); w.hasBalloon = true; w.h = p.h; }
     walkers.push(w);
   });
 }
@@ -635,7 +646,7 @@ function updatePeople(dt, time){
   for (const w of walkers){
     if (w.wait > 0){ w.wait -= dt; w.s.material.opacity = 0; if (w.dog) w.dog.material.opacity = 0; continue; }
     w.t += w.speed * dt;
-    if (w.t >= w.L){ w.t = 0; w.wait = 1 + hash(time) * 3; w.dir = hash(time * 7.1) < 0.5 ? 1 : -1; continue; }
+    if (w.t >= w.L){ w.t = 0; w.wait = 1 + hash(time) * 3; w.dir = hash(time * 7.1) < 0.5 ? 1 : -1; if (w.texNo) w.hasBalloon = true; continue; }
     const f = w.dir > 0 ? w.t / w.L : 1 - w.t / w.L;
     const from = w.dir > 0 ? w.A : w.B, to = w.dir > 0 ? w.B : w.A;
     const x = w.A.x + (w.B.x - w.A.x) * f, z = w.A.y + (w.B.y - w.A.y) * f;
@@ -643,10 +654,13 @@ function updatePeople(dt, time){
     const bob = w.kind === 'bike' ? 0 : Math.abs(Math.sin(time * 6 * w.speed)) * 0.06;
     w.s.position.set(x, groundY(x, z) + bob, z);
     w.s.material.opacity = fade;
-    w.s.material.map = w.tex[Math.floor(time * (w.kind === 'bike' ? 3 : 4) * w.speed) % 2];
+    w.s.material.map = (w.texNo && !w.hasBalloon ? w.texNo : w.tex)[Math.floor(time * (w.kind === 'bike' ? 3 : 4) * w.speed) % 2];
     const dx = to.x - from.x, dz = to.y - from.y, len = Math.hypot(dx, dz);
     const sd = v.set(x + dx / len, 0, z + dz / len).project(camera).x - v2.set(x, 0, z).project(camera).x;
     w.s.scale.x = Math.abs(w.s.scale.x) * (sd >= 0 ? 1 : -1);
+    if (w.texNo && w.hasBalloon && entered && time - enteredAt > 4 && time - lastRelease > 45 && w.t / w.L > 0.4 && w.t / w.L < 0.6 && fade > 0.99){
+      w.hasBalloon = false; lastRelease = time; releaseBalloon(w, x, z, sd >= 0 ? 1 : -1);
+    }
     if (w.dog){
       const dxp = x + dx / len * 1.3, dzp = z + dz / len * 1.3;
       w.dog.position.set(dxp, groundY(dxp, dzp), dzp); w.dog.material.opacity = fade;
@@ -682,6 +696,204 @@ function buildSnow(){
         if (a * uWinter < 0.02) discard; gl_FragColor = vec4(1.0, 1.0, 1.0, a * uWinter * (0.7 + 0.3 * vS)); }`,
   });
   const pts = new THREE.Points(geo, snowMat); pts.frustumCulled = false; pts.renderOrder = 2; scene.add(pts);
+}
+
+// ---------------------------------------------------------------- handfest extras: hot-air balloon, runaway heart balloon, plane with banner, shopping bag
+const HF_PINK = '#c60786';
+const LOGO = { white: null, pink: null };
+const BAG_WALKER = 0;                     // index in scene.json paths: the man walking through the gate carries the bag
+let enteredAt = -1, lastRelease = -1e9;
+const SV = new THREE.Vector3(-FRONT.z, 0, FRONT.x);   // lateral axis of the gate face (positive = left on the postcard view)
+const local = (f, s, y) => new THREE.Vector3(TOWER.x, y, TOWER.z).addScaledVector(FRONT, f).addScaledVector(SV, s);
+function loadImg(src){ return new Promise(res => { const i = new Image(); i.onload = () => res(i); i.onerror = () => res(null); i.src = src; }); }
+async function loadExtras(){
+  const [w, p] = await Promise.all([loadImg('handfest_white.png'), loadImg('handfest_pink.png'), document.fonts.load('64px "Patrick Hand"').catch(() => {})]);
+  LOGO.white = w; LOGO.pink = p;
+}
+// red heart with the white shop logo; (cx, by) = bottom tip, k = scale (1 = 60 px wide)
+function heartWithLogo(g, cx, by, k){
+  g.save();
+  g.beginPath(); g.moveTo(cx, by);
+  g.bezierCurveTo(cx - 30 * k, by - 20 * k, cx - 22 * k, by - 42 * k, cx, by - 28 * k);
+  g.bezierCurveTo(cx + 22 * k, by - 42 * k, cx + 30 * k, by - 20 * k, cx, by);
+  g.fillStyle = '#e8455f'; g.fill(); g.clip();
+  if (LOGO.white){ const lw = 21 * k, lh = lw * 411 / 370; g.drawImage(LOGO.white, cx - lw / 2, by - 18 * k - lh / 2, lw, lh); }
+  g.restore();
+}
+
+// ---- the kid's heart balloon slips away and floats up over the town
+const runaways = [];
+let runawayTex = null;
+function releaseBalloon(w, x, z, flip){
+  if (!runawayTex) runawayTex = canvasTex(256, 512, (g) => {
+    g.strokeStyle = '#2a2140'; g.lineWidth = 3; g.lineCap = 'round';
+    g.beginPath(); g.moveTo(128, 168); g.bezierCurveTo(110, 260, 150, 360, 124, 506); g.stroke();
+    heartWithLogo(g, 128, 170, 3.1);
+  });
+  const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: runawayTex, transparent: true, depthWrite: false }));
+  sp.center.set(0.5, 0); sp.scale.set(0.8, 1.6, 1);
+  // start exactly where the balloon was drawn on the kid: 0.34 m sideways (screen space), heart tip 1.5 m up
+  const right = new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld, 0).setY(0).normalize();
+  const p0 = new THREE.Vector3(x, groundY(x, z), z).addScaledVector(right, 0.34 * flip);
+  p0.y += (1 - 36 / 192 - 0.02) * w.h - (1 - 170 / 512) * 1.6;
+  sp.position.copy(p0); scene.add(sp);
+  runaways.push({ sp, p0, age: 0, seed: Math.random() * 6 });
+}
+function updateRunaways(dt){
+  for (let i = runaways.length - 1; i >= 0; i--){
+    const r = runaways[i]; r.age += dt; const a = r.age;
+    const rise = 0.9 * a + 0.35 * Math.min(a, 3) * Math.min(a, 3) / 2 + 0.7 * Math.max(0, a - 3);   // eases into a steady climb
+    r.sp.position.copy(r.p0).addScaledVector(SV, -0.55 * a + 0.35 * Math.sin(a * 1.3 + r.seed)).addScaledVector(FRONT, -0.25 * a);
+    r.sp.position.y += rise;
+    r.sp.material.rotation = Math.sin(a * 1.7 + r.seed) * 0.16;
+    r.sp.material.opacity = Math.min(1, (38 - a) / 6);
+    if (a > 38){ scene.remove(r.sp); r.sp.material.dispose(); runaways.splice(i, 1); }
+  }
+}
+
+// ---- hot-air balloon in cream and pink with the shop logo, rising behind the gate
+let hab = null;
+function buildHotAirBalloon(){
+  // profile: conical skirt into a round crown; resampled by arc length so the texture is not stretched
+  const R = 7.2, H = 17.5, yEq = 10.5, r0 = 1.5, raw = [];
+  for (let i = 0; i <= 400; i++){
+    const y = H * i / 400;
+    const r = y <= yEq ? r0 + (R - r0) * Math.sin(Math.PI / 2 * y / yEq) : R * Math.sqrt(Math.max(0, 1 - ((y - yEq) / (H - yEq)) ** 2));
+    raw.push([r, y]);
+  }
+  const acc = [0]; for (let i = 1; i < raw.length; i++) acc.push(acc[i - 1] + Math.hypot(raw[i][0] - raw[i - 1][0], raw[i][1] - raw[i - 1][1]));
+  const total = acc[acc.length - 1], pts = [];
+  let vEq = 0;
+  for (let j = 0, k = 0; j <= 60; j++){
+    const d = total * j / 60; while (k < raw.length - 2 && acc[k + 1] < d) k++;
+    const t = (d - acc[k]) / (acc[k + 1] - acc[k]);
+    const r = raw[k][0] + (raw[k + 1][0] - raw[k][0]) * t, y = raw[k][1] + (raw[k + 1][1] - raw[k][1]) * t;
+    pts.push(new THREE.Vector2(Math.max(r, 0.001), y));
+  }
+  for (let i = 0; i < raw.length; i++) if (raw[i][1] >= yEq){ vEq = acc[i] / total; break; }
+  const circ = 2 * Math.PI * R, pxm = 2048 / circ;                    // px per metre around the equator
+  const tex = canvasTex(2048, 1024, (g, w, h) => {
+    const gores = 16;
+    for (let i = 0; i < gores; i++){ g.fillStyle = i % 2 ? '#f3a5c4' : '#fffaf0'; g.fillRect(i * w / gores - 1, 0, w / gores + 2, h); }
+    const ey = (1 - vEq) * h, bh = 8.4 * (h / total);                 // cream belt around the equator, 8.4 m tall
+    g.fillStyle = '#fffaf0'; g.fillRect(0, ey - bh / 2, w, bh);
+    g.fillStyle = HF_PINK; g.fillRect(0, ey - bh / 2 - 10, w, 10); g.fillRect(0, ey + bh / 2, w, 10);
+    g.fillStyle = '#e8455f'; g.fillRect(0, h - 40, w, 40);                   // skirt
+    g.fillStyle = HF_PINK; g.fillRect(0, 0, w, 26);                           // crown
+    if (LOGO.pink) for (const u of [1 / 6, 1 / 2, 5 / 6]){
+      const lw = 5.6 * pxm, lh = 5.6 * 411 / 370 * (h / total);
+      g.drawImage(LOGO.pink, u * w - lw / 2, ey - lh / 2, lw, lh);
+    }
+  });
+  const mat = new THREE.MeshLambertMaterial({ map: tex, transparent: true, emissive: new THREE.Color('#ff9a3c'), emissiveIntensity: 0 });
+  const env = new THREE.Mesh(new THREE.LatheGeometry(pts, 48), mat); env.castShadow = true;
+  const g = new THREE.Group(); g.add(env);
+  const lam = (c) => new THREE.MeshLambertMaterial({ color: c, transparent: true });
+  const basket = new THREE.Mesh(new THREE.BoxGeometry(1.7, 1.2, 1.7), lam(0x8a5a32)); basket.position.y = -3.6; basket.castShadow = true; g.add(basket);
+  const rim = new THREE.Mesh(new THREE.BoxGeometry(1.85, 0.2, 1.85), lam(0x5a3a22)); rim.position.y = -3.0; g.add(rim);
+  const ropeMat = new THREE.LineBasicMaterial({ color: 0x5a3a22, transparent: true });
+  const rp = []; for (const [sx, sz] of [[1, 1], [1, -1], [-1, 1], [-1, -1]]) rp.push(sx * 0.8, -3.0, sz * 0.8, sx * 1.1, 0.05, sz * 1.1);
+  const ropes = new THREE.LineSegments(new THREE.BufferGeometry().setAttribute('position', new THREE.Float32BufferAttribute(rp, 3)), ropeMat); g.add(ropes);
+  const flame = new THREE.Mesh(new THREE.ConeGeometry(0.35, 1.3, 10), new THREE.MeshBasicMaterial({ color: 0xffb347, transparent: true }));
+  flame.position.y = -1.6; g.add(flame);
+  g.visible = false; scene.add(g);
+  const face = Math.atan2(-FRONT.x, -FRONT.z);                         // the logo at u = 1/2 faces the postcard view
+  hab = { g, mats: [mat, basket.material, rim.material, ropeMat, flame.material], env: mat, flame, face, t: -1 };
+}
+function updateHotAirBalloon(dt, time, night){
+  if (!hab) return;
+  if (!entered){ hab.g.visible = false; return; }
+  if (hab.t < 0) hab.t = 0;                                             // first launch right after the card is opened
+  hab.t += dt;
+  const CYCLE = 125, PAUSE = 10, a = hab.t;
+  if (a > CYCLE + PAUSE){ hab.t = 0; return; }
+  if (a > CYCLE){ hab.g.visible = false; return; }
+  hab.g.visible = true;
+  const p = local(-92 - 0.12 * a, -30 + 0.2 * a, 0);
+  p.y = groundY(p.x, p.z) + 24 + 1.15 * a + 0.4 * Math.sin(a * 0.6);
+  hab.g.position.copy(p);
+  hab.g.rotation.y = hab.face + 0.35 * Math.sin(a * 0.045);
+  const op = Math.min(1, a / 3, (CYCLE - a) / 8);
+  for (const m of hab.mats) m.opacity = op;
+  const burn = (a % 7) < 1.6 ? 1 : 0;                                   // burner fires in short bursts
+  hab.flame.visible = burn > 0; hab.flame.scale.y = 0.8 + 0.4 * Math.abs(Math.sin(time * 23));
+  hab.env.emissiveIntensity = burn * (0.06 + 0.5 * night) + 0.08 * night;
+}
+
+// ---- small plane towing a banner with the shop's Instagram name
+let plane = null;
+function buildPlane(){
+  const g = new THREE.Group();
+  const lam = (c) => new THREE.MeshLambertMaterial({ color: c });
+  const add = (geo, mat, x, y, z) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.castShadow = true; g.add(m); return m; };
+  const body = add(new THREE.CapsuleGeometry(0.75, 4.0, 6, 14), lam(0xfffaf0), 0, 0, 0); body.rotation.z = Math.PI / 2;
+  const stripe = add(new THREE.CylinderGeometry(0.78, 0.78, 0.5, 14), lam(0xe8455f), -0.4, 0, 0); stripe.rotation.z = Math.PI / 2;
+  add(new THREE.BoxGeometry(1.7, 0.18, 10), lam(0xe8455f), 0.5, 0.62, 0);                      // high wing
+  add(new THREE.BoxGeometry(1.0, 0.12, 3.4), lam(0xe8455f), -2.6, 0.15, 0);                    // tailplane
+  add(new THREE.BoxGeometry(1.2, 1.4, 0.14), lam(0x3b6fd0), -2.7, 0.85, 0);                    // fin
+  add(new THREE.SphereGeometry(0.55, 12, 8), lam(0x3b6fd0), 1.1, 0.55, 0);                     // cockpit window
+  const prop = new THREE.Group(); prop.position.set(2.85, 0, 0); g.add(prop);
+  prop.add(new THREE.Mesh(new THREE.SphereGeometry(0.28, 10, 8), lam(0xf1bd4b)));
+  const blade = new THREE.Mesh(new THREE.BoxGeometry(0.1, 2.5, 0.28), lam(0x2a2140)); prop.add(blade);
+  const beacon = new THREE.Mesh(new THREE.SphereGeometry(0.16, 8, 6), new THREE.MeshBasicMaterial({ color: 0xff3b3b })); beacon.position.set(-2.7, 1.6, 0); g.add(beacon);
+  // banner: 18 m long, hangs from a tow line; readable from both sides (u mirrored on back faces)
+  const BL = 18, BH = 3.2, gap = 5;
+  const tex = canvasTex(2048, 364, (c, w, h) => {
+    c.fillStyle = '#fffaf0'; c.fillRect(0, 0, w, h);
+    c.strokeStyle = HF_PINK; c.lineWidth = 16; c.strokeRect(14, 14, w - 28, h - 28);
+    c.fillStyle = HF_PINK; c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.font = '220px "Patrick Hand", "Comic Sans MS", sans-serif';
+    const text = '@handfestladen', tw = c.measureText(text).width, ix = w / 2 - tw / 2 - 150;
+    c.fillText(text, w / 2 + 90, h / 2 + 14);
+    // little Instagram glyph
+    c.lineWidth = 16; c.strokeStyle = HF_PINK;
+    c.beginPath(); if (c.roundRect) c.roundRect(ix - 95, h / 2 - 95, 190, 190, 52); else c.rect(ix - 95, h / 2 - 95, 190, 190); c.stroke();
+    c.beginPath(); c.arc(ix, h / 2, 46, 0, 7); c.stroke();
+    c.beginPath(); c.arc(ix + 52, h / 2 - 52, 12, 0, 7); c.fill();
+  });
+  const bgeo = new THREE.PlaneGeometry(BL, BH, 36, 4);
+  bgeo.translate(-(3.1 + gap + BL / 2), -BH / 2 + 0.2, 0);
+  const bmat = new THREE.MeshLambertMaterial({ map: tex, side: THREE.DoubleSide, emissive: 0xffffff, emissiveMap: tex, emissiveIntensity: 0 });
+  bmat.onBeforeCompile = (sh) => {
+    sh.fragmentShader = sh.fragmentShader
+      .replace('#include <map_fragment>', 'vec2 bUv = gl_FrontFacing ? vMapUv : vec2(1.0 - vMapUv.x, vMapUv.y);\nvec4 sampledDiffuseColor = texture2D( map, bUv );\ndiffuseColor *= sampledDiffuseColor;')
+      .replace('#include <emissivemap_fragment>', 'totalEmissiveRadiance *= texture2D( emissiveMap, bUv ).rgb;');
+  };
+  const banner = new THREE.Mesh(bgeo, bmat); banner.castShadow = true; g.add(banner);
+  const base = bgeo.attributes.position.array.slice();
+  const pole = add(new THREE.CylinderGeometry(0.06, 0.06, BH + 0.4, 6), lam(0x2a2140), -(3.1 + gap), -BH / 2 + 0.2, 0);
+  const tow = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-2.9, 0, 0), new THREE.Vector3(-(3.1 + gap), 0.1, 0)]), new THREE.LineBasicMaterial({ color: 0x2a2140 }));
+  g.add(tow);
+  g.visible = false; scene.add(g);
+  plane = { g, prop, beacon, banner, bmat, base, BL, gap, s: 125, dir: -1, lane: 0, wait: 0 };
+}
+function updatePlane(dt, time, night){
+  if (!plane) return;
+  if (!entered){ plane.g.visible = false; return; }
+  const P = plane, SPEED = 12, SPAN = 270;
+  if (P.wait > 0){
+    P.wait -= dt; P.g.visible = false;
+    if (P.wait <= 0){ P.dir *= -1; P.s = -P.dir * SPAN; P.lane = 1 - P.lane; }
+    return;
+  }
+  P.s += P.dir * SPEED * dt;
+  if (Math.abs(P.s) > SPAN){ P.wait = 14; return; }
+  P.g.visible = true;
+  const f = P.lane ? -78 : -96, y = P.lane ? 58 : 64;
+  P.g.position.copy(local(f, P.s, y + 1.2 * Math.sin(time * 0.5)));
+  const d = SV.clone().multiplyScalar(P.dir);
+  P.g.rotation.set(0, Math.atan2(-d.z, d.x), 0);
+  P.g.rotateX(0.04 * Math.sin(time * 0.9));
+  P.prop.rotation.x += dt * 45;
+  P.beacon.visible = (time % 1.2) < 0.15;
+  // flutter: a travelling wave that grows towards the free end of the banner
+  const pos = P.banner.geometry.attributes.position, b = P.base;
+  for (let i = 0; i < pos.count; i++){
+    const x = b[i * 3], u = Math.min(1, (-(x) - 3.1 - P.gap) / P.BL);
+    pos.array[i * 3 + 2] = (0.15 + 0.55 * u) * Math.sin(x * 0.55 + time * 7.5) + 0.25 * u * Math.sin(b[i * 3 + 1] * 1.3 + time * 5);
+  }
+  pos.needsUpdate = true; P.banner.geometry.computeVertexNormals();
+  P.bmat.emissiveIntensity = 0.5 * night;
 }
 
 // ---------------------------------------------------------------- camera presets
@@ -735,8 +947,8 @@ camera.position.copy(start.eye); controls.target.copy(start.target); controls.up
 await buildTerrain();
 const sceneData = await (await fetch('scene.json')).json();
 const tower = buildTower(sceneData.pier);
-await Promise.all([buildBuildings(), buildTrees()]);
-buildClouds(); buildPeople(sceneData.paths); buildSnow(); resize();
+await Promise.all([buildBuildings(), buildTrees(), loadExtras()]);
+buildClouds(); buildPeople(sceneData.paths); buildSnow(); buildHotAirBalloon(); buildPlane(); resize();
 ready = true; document.getElementById('loading').textContent = '';
 if (location.hash === '#direkt') enter();
 
@@ -764,7 +976,8 @@ function tick(){
   }
   for (const c of clouds){ c.userData.a += c.userData.sp * dt; c.position.x = Math.cos(c.userData.a) * c.userData.r; c.position.z = Math.sin(c.userData.a) * c.userData.r; }
   tower.userData.vane.rotation.y = Math.sin(time * 0.4) * 0.6;
-  updatePeople(dt, time);
+  if (entered && enteredAt < 0) enteredAt = time;
+  updatePeople(dt, time); updateRunaways(dt); updateHotAirBalloon(dt, time, n); updatePlane(dt, time, n);
   controls.update();
   // keep the camera above ground
   const gy = groundY(camera.position.x, camera.position.z) + 1.4;
@@ -778,8 +991,11 @@ window.__winter = v => { winterTarget = v; U.uWinter.value = v; bWinter.setAttri
 window.__night = v => { nightTarget = v; U.uNight.value = v; bNight.setAttribute('aria-pressed', String(!!v)); bNight.textContent = v ? 'Tag' : 'Nacht'; };
 window.__look = (ex, ey, ez, tx, ty, tz) => { const T = new THREE.Vector3(TOWER.x, 0, TOWER.z), sv = new THREE.Vector3(-FRONT.z, 0, FRONT.x);
   camera.position.copy(T).addScaledVector(FRONT, ex).addScaledVector(sv, ez); camera.position.y = ey; controls.target.copy(T).addScaledVector(FRONT, tx).addScaledVector(sv, tz); controls.target.y = ty; fly = null; };
+window.__hab = a => { hab.t = a; };
+window.__plane = (sv, dir, lane) => Object.assign(plane, { s: sv, dir, lane, wait: 0 });
+window.__release = () => { const w = walkers.find(w => w.texNo); lastRelease = -1e9; w.t = w.L * 0.5; };
+window.__walk = (i, f, dir = 1) => { const w = walkers[i]; w.t = w.L * f; w.wait = 0; w.dir = dir; };
 window.__pose = (d, h) => { const t = new THREE.Vector3(TOWER.x, 14, TOWER.z); const eye = t.clone().addScaledVector(FRONT, d); eye.y = h; camera.position.copy(eye); controls.target.copy(t); fly = null; };
 </script>
-
 </body>
 </html>
